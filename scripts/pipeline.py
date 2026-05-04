@@ -43,6 +43,9 @@ def transform_data(data):
         data['injuries_reported_not_evident'] * 1
     )
 
+    #adding a binary column to indicate if the accident was severe or not
+    data['is_severe'] = data['severity_score'] >= 3
+
     #adding multi_unit column to determine if the accident involved more than one vehicle
     data['multi_unit'] = (data['num_units'] > 1).astype(int)
 
@@ -53,13 +56,88 @@ def transform_data(data):
     data['season'] = data['crash_month'].apply(lambda x: 'Winter' if x in [12, 1, 2] else ('Spring' if x in [3, 4, 5] else ('Summer' if x in [6, 7, 8] else 'Fall')))
 
     #adding damage cost estimation    
-    data ['damage_level'] = data['damage'].apply(lambda x: 'High' if x == 'OVER $1,500' else ('Medium' if x == '$501 - $1,500' else ('Low' if x == '$500 OR LESS' else 'Unknown')))
+    data ['damage_level'] = data['damage'].apply(lambda x: 'High' if 'OVER' in x else ('Medium' if '$501' in x and '$1,500' in x else ('Low' if 'LESS' in x else 'Unknown')))
+    
+    #for prim_contributory_cause feature, we can categorize the causes into broader categories such as driver-related, road-related, environment-related, and other. This will help in analyzing the data more effectively and identifying patterns in the causes of accidents.
+    #creating lists of causes for each category
+    driver_causes = [
+        'FAILING TO YIELD RIGHT-OF-WAY',
+        'FOLLOWING TOO CLOSELY',
+        'DISREGARDING TRAFFIC SIGNALS',
+        'IMPROPER TURNING/NO SIGNAL',
+        'FAILING TO REDUCE SPEED TO AVOID CRASH',
+        'IMPROPER OVERTAKING/PASSING',
+        'DISREGARDING STOP SIGNS',
+        'IMPROPER LANE USAGE',
+        'DRIVING SKILLS/KNOWLEDGE/EXPERIENCE',
+        'IMPROPER BACKING',
+        'OPERATING VEHICLE IN ERRATIC, RECKLESS, CARELESS, NEGLIGENT OR AGGRESSIVE MANNER',
+        'VISION OBSCURED (DARK CLOTHING, WEATHER, ETC.)',
+        'DISTRACTION - FROM INSIDE VEHICLE',
+        'DRIVING ON WRONG SIDE/WAY',
+        'DISREGARDING OTHER TRAFFIC SIGNS',
+        'EQUIPMENT VEHICLE CONDITION',
+        'UNDER THE INFLUENCE OF ALCOHOL/DRUGS (ALCOHOL, DRUGS, MEDICATION)',
+        'PHYSICAL CONDITION OF DRIVER',
+        'DISTRACTION - FROM OUTSIDE VEHICLE',
+        'EXCEEDING SAFE SPEED FOR CONDITIONS',
+        'TURNING RIGHT ON RED',
+        'EXCEEDING AUTHORIZED SPEED LIMIT',
+        'DISREGARDING ROAD MARKINGS',
+        'CELL PHONE USE OTHER THAN TEXTING',
+        'HAD BEEN DRINKING (USE WHEN ARREST IS NOT MADE)',
+        'DISREGARDING YIELD SIGNS',
+        'DISTRACTION - OTHER ELECTRONIC DEVICE (NAVIGATION DEVICE, DVD PLAYER, ETC.)',
+        'TEXTING',
+        'PASSING STOPPED SCHOOL BUS',
+        'BICYCLE ADVANCING LEGALLY ON RED LIGHT',
+        'MOTORCYCLE ADVANCING LEGALLY ON RED LIGHT',
+    ]
+
+    road_causes = [
+        'NOT APPLICABLE',
+        'ROAD CONSTRUCTION/MAINTENANCE',
+        'EVASIVE ACTION DUE TO ANIMAL, OBJECT, NONMOTORIST',
+        'ROAD ENGINEERING/SURFACE/MARKING DEFECTS',
+        'RELATED TO BUS STOP',
+        'ANIMAL',
+        'OBSTRUCTED CROSSWALK',
+    ]
+
+    environment_causes = ['WEATHER']
+        
+    
+    #function for categorization
+    def categorize_cause(cause):
+        clean_cause = cause.strip().upper()
+
+        if clean_cause in driver_causes:
+            return 'DRIVER'
+        elif clean_cause in road_causes:
+            return 'ROAD'
+        elif clean_cause in environment_causes:
+            return 'ENVIRONMENT'
+        elif clean_cause == 'UNABLE TO DETERMINE':
+            return 'UNKNOWN'
+        else:
+            return 'OTHER'
+        
+        
+            
+    data['cause_category'] = data['prim_contributory_cause'].apply(categorize_cause)
+
+    data['is_driver_related'] = data['cause_category'] == 'DRIVER'
+    data['is_road_related'] = data['cause_category'] == 'ROAD'
+    data['is_environment_related'] = data['cause_category'] == 'ENVIRONMENT'
+    data['is_unknown_cause'] = data['cause_category'] == 'UNKNOWN'
+    data['is_other_cause'] = data['cause_category'] == 'OTHER'
+
 
 
 def load_data(data, database_url, table_name):
     pass
 
 print('successful run')
-road = data['prim_contributory_cause'].value_counts()
-print(road)
+#road = data['prim_contributory_cause'].value_counts()
+#print(road)
 #print(transform_data(extract_data('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv')).info())
