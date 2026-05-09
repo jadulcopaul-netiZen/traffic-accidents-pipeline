@@ -24,8 +24,22 @@ CREATE TABLE if not EXISTS traffic_accidents (
     injuries_no_indication smallint,
     crash_hour smallint,
     crash_day_of_week smallint,
-    crash_month smallint
-    
+    crash_month smallint,
+     --  FEATURE ENGINEERING (NEW COLUMNS)
+    severity_score INT,
+    is_severe BOOLEAN,
+    multi_unit BOOLEAN,
+    day_type VARCHAR(10),
+    time_of_day VARCHAR(20),
+    season VARCHAR(10),
+    month_name VARCHAR(20),
+    damage_level VARCHAR(20),
+    cause_category VARCHAR(20),
+    is_driver_related BOOLEAN,
+    is_road_related BOOLEAN,
+    is_environment_related BOOLEAN,
+    is_unknown_cause BOOLEAN,
+    is_other_cause BOOLEAN
 );
 
 

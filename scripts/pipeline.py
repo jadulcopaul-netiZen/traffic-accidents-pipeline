@@ -125,14 +125,57 @@ def transform_data(data):
         
             
     data['cause_category'] = data['prim_contributory_cause'].apply(categorize_cause)
-
+    #these are new columns for aggregated analysis of the causes of accidents, which will help in identifying patterns and trends in the data.
     data['is_driver_related'] = data['cause_category'] == 'DRIVER'
     data['is_road_related'] = data['cause_category'] == 'ROAD'
     data['is_environment_related'] = data['cause_category'] == 'ENVIRONMENT'
     data['is_unknown_cause'] = data['cause_category'] == 'UNKNOWN'
     data['is_other_cause'] = data['cause_category'] == 'OTHER'
 
+    # Highest cause of injury based on severity and total injuries
+    highest_injury_cause = (
+        data.groupby("cause_category")
+        .agg(
+            average_severity=("severity_score", "mean"),
+            total_injuries=("injuries_total", "sum"),
+            accidents_count=("cause_category", "count")
+        )
+        .sort_values(by="average_severity", ascending=False)
+    )
+    #assigning percentage of accidents for each cause category
+    highest_injury_cause['accident_percentage'] = highest_injury_cause['accidents_count'] / highest_injury_cause['accidents_count'].sum() * 100
+    highest_injury_cause = highest_injury_cause.sort_values(by='accident_percentage', ascending=False
+    )
 
+    #featuring worst day of the week for accidents based on severity and total injuries
+    worst_day_of_week = (
+        data.groupby('crash_day_of_week')
+        .agg(average_severity = ('severity_score', 'mean'),
+             total_injuries = ('injuries_total', 'sum'),
+             accidents_count = ('crash_day_of_week', 'count'))
+    ) 
+    worst_day_of_week['accident_percentage'] = worst_day_of_week['accidents_count'] / worst_day_of_week['accidents_count'].sum() * 100
+    worst_day_of_week = worst_day_of_week.sort_values(by='accident_percentage', ascending=False)
+
+    #adding average damage cost
+    average_damage_cost = (
+        data.groupby('damage_level')
+        .agg(average_severity = ('severity_score', 'mean'),
+             total_injuries = ('injuries_total', 'sum'),
+             accidents_count = ('damage_level', 'count'))
+    )
+    average_damage_cost['accident_percentage'] = average_damage_cost['accidents_count'] / average_damage_cost['accidents_count'].sum() * 100
+    average_damage_cost = average_damage_cost.sort_values(by='accident_percentage', ascending=False)   
+
+    #Adding single or multi unit accidents
+    single_multi_unit_analysis = data.groupby('multi_unit').agg(
+        average_severity = ('severity_score', 'mean'),
+        total_injuries = ('injuries_total', 'sum'),
+        accidents_count = ('multi_unit', 'count')
+    )
+    single_multi_unit_analysis['accident_percentage'] = single_multi_unit_analysis['accidents_count'] / single_multi_unit_analysis['accidents_count'].sum() * 100
+    single_multi_unit_analysis = single_multi_unit_analysis.sort_values(by='accident_percentage', ascending=False)
+    
 
 def load_data(data, database_url, table_name):
     pass
