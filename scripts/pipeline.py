@@ -17,15 +17,17 @@ data=pd.read_csv('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject
 
 # Creating a pipeline now
 
+#Extraction
 def extract_data(file_path):
     data = pd.read_csv(file_path)
     return data
 
+#Transformation
 def transform_data(data):
     #Conversions of date and datatypes of injuries and, day, month, and hour of injuries
     #adding cleaned_data to avoid modifying the original data, just practicing data integrity 
     cleaned_data = data.copy()
-    cleaned_data['crash_date'] = pd.to_datetime(cleaned_data['crash_date'], format='%m/%d/%Y', errors='coerce')
+    cleaned_data['crash_date'] = pd.to_datetime(cleaned_data['crash_date'], errors='coerce')
     list_to_int = [
         'injuries_total',
         'injuries_fatal',
@@ -188,9 +190,21 @@ def transform_data(data):
 
     return cleaned_data
 
+#Loading data
 def load_data(data, database_url, table_name):
-    pass
+    engine = create_engine("postgresql://postgres:!Langlang55!@localhost:5432/traffics_db")
+    data.to_sql('traffic_accidents_final', engine, if_exists='replace', index=False)
 
+#Main function to run the pipeline
+def main():
+    file_path = 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv'
+    data = extract_data(file_path)
+    transformed_data = transform_data(data)
+    load_data(transformed_data, "postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", "traffic_accidents_final")
+
+# Execute the pipeline by calling the main function, if name is main, which ensures that the pipeline runs only when this script is executed directly and not when imported as a module in another script.  
+if __name__ == "__main__":
+    main()
 print('successful run')
 
 # Generate a unique run ID based on current timestamp for reproducibility and tracking
