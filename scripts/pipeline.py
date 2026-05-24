@@ -1,21 +1,14 @@
 import pandas as pd
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from datetime import datetime
-
-
-
-
+#to map the datatypes of my database schema to the datatypes of my cleaned dataset, which will ensure that the data is loaded correctly into the database and that the integrity of the data is maintained.
+from sqlalchemy.types import Integer, Boolean, String, Date, DateTime
 
 #setting the data variable to read the csv file and print the head, info and columns of the data
 data=pd.read_csv('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv')
-#print(data.head())
-#print(data.info())
-#print(data.columns)
 
-#road = data[''].value_counts()
-#print(road)
-
-# Creating a pipeline now
+# Creating pipeline
 
 #Extraction
 def extract_data(file_path):
@@ -27,7 +20,10 @@ def transform_data(data):
     #Conversions of date and datatypes of injuries and, day, month, and hour of injuries
     #adding cleaned_data to avoid modifying the original data, just practicing data integrity 
     cleaned_data = data.copy()
-    cleaned_data['crash_date'] = pd.to_datetime(cleaned_data['crash_date'], errors='coerce')
+    cleaned_data['crash_date'] = pd.to_datetime(
+    cleaned_data['crash_date'],
+    errors='coerce'
+    )
     list_to_int = [
         'injuries_total',
         'injuries_fatal',
@@ -56,18 +52,18 @@ def transform_data(data):
     cleaned_data['is_severe'] = cleaned_data['severity_score'] >= 3
 
     #adding multi_unit column to determine if the accident involved more than one vehicle
-    cleaned_data['multi_unit'] = (cleaned_data['num_units'] > 1).astype(int)
+    cleaned_data['multi_unit'] = (cleaned_data['num_units'] > 1)
 
     #adding time-based feature layer by converting day of the week, hour of the day, season, and month to their equivalents
     cleaned_data['day_type'] = cleaned_data['crash_day_of_week'].apply(lambda x: 'Weekend' if x in [6, 7] else 'Weekday')
     cleaned_data['time_of_day'] = cleaned_data['crash_hour'].apply(lambda x: 'Evening' if 17 <= x < 21 else ('Midnight' if 21 <= x < 5 else 'Daytime' if 5 <= x < 12 else 'Afternoon' if 12 <= x < 17 else 'Unknown'))
     
-    cleaned_data['month'] = cleaned_data['crash_month'].apply(lambda x: 'January' if x == 1 else ('February' if x == 2 else ('March' if x == 3 else ('April' if x == 4 else ('May' if x == 5 else ('June' if x == 6 else ('July' if x == 7 else ('August' if x == 8 else ('September' if x == 9 else ('October' if x == 10 else ('November' if x == 11 else 'December')))))))))))
+    cleaned_data['month_name'] = cleaned_data['crash_month'].apply(lambda x: 'January' if x == 1 else ('February' if x == 2 else ('March' if x == 3 else ('April' if x == 4 else ('May' if x == 5 else ('June' if x == 6 else ('July' if x == 7 else ('August' if x == 8 else ('September' if x == 9 else ('October' if x == 10 else ('November' if x == 11 else 'December')))))))))))
    
     cleaned_data['season'] = cleaned_data['crash_month'].apply(lambda x: 'Winter' if x in [12, 1, 2] else ('Spring' if x in [3, 4, 5] else ('Summer' if x in [6, 7, 8] else 'Fall')))
 
     #adding damage cost estimation    
-    cleaned_data ['damage_level'] = cleaned_data['damage'].apply(lambda x: 'High' if 'OVER' in x else ('Medium' if '$501' in x and '$1,500' in x else ('Low' if 'LESS' in x else 'Unknown')))
+    cleaned_data ['damage_level'] = cleaned_data['damage'].fillna('Unknown').apply(lambda x: 'High' if 'OVER' in x else ('Medium' if '$501' in x and '$1,500' in x else ('Low' if 'LESS' in x else 'Unknown')))
     
     #for prim_contributory_cause feature, we can categorize the causes into broader categories such as driver-related, road-related, environment-related, and other. This will help in analyzing the data more effectively and identifying patterns in the causes of accidents.
     
@@ -192,25 +188,89 @@ def transform_data(data):
 
 #Loading data
 def load_data(data, database_url, table_name):
-    engine = create_engine("postgresql://postgres:!Langlang55!@localhost:5432/traffics_db")
-    data.to_sql('traffic_accidents_final', engine, if_exists='replace', index=False)
+    engine = create_engine(database_url)
 
-#Main function to run the pipeline
+    #truncating the table before loading new data for idempotency of this project.
+    with engine.begin() as connection:
+        connection.execute(text(f'TRUNCATE TABLE public.{table_name};'))
+    dtype={
+        'crash_date' : Date,
+
+        'traffic_control_device' : String(100) ,
+        'weather_condition' : String(255) ,
+        'lighting_condition' : String(255) ,
+        'first_crash_type' : String(255) ,
+        'trafficway_type' : String(255) ,
+        'alignment' : String(100) ,
+        'roadway_surface_cond' : String(255) ,
+        'road_defect' : String(255) ,
+        'crash_type' : String(255) ,
+        'intersection_related_i' : String(255) ,
+        'damage' : String(255) ,
+        'prim_contributory_cause' : String(255) ,
+        'day_type' : String(10) ,
+        'time_of_day' : String(20) ,
+        'season' : String(10) ,
+        'month_name' : String(20) ,
+        'damage_level' : String(20) ,
+        'cause_category' : String(20) ,
+
+        'num_units' : Integer,
+        'injuries_total' : Integer,
+        'injuries_fatal' : Integer,
+        'injuries_incapacitating' : Integer,
+        'injuries_non_incapacitating' : Integer,
+        'injuries_reported_not_evident' : Integer,
+        'injuries_no_indication' : Integer,
+        'crash_hour' : Integer,
+        'crash_day_of_week' : Integer,
+        'crash_month' : Integer,
+        'severity_score' : Integer,
+
+        'is_severe' : Boolean,
+        'multi_unit' : Boolean,
+        'is_driver_related' : Boolean,
+        'is_road_related' : Boolean,
+        'is_environment_related' : Boolean,
+        'is_unknown_cause' : Boolean,
+        'is_other_cause' : Boolean
+    }
+    data.to_sql('traffic_accidents_final', engine, if_exists='append', dtype=dtype, index=False)
+
+#after ETL, i'll call the views.sql file to create the views for analysis and visualization, to make the views available in the database.
+
+def create_views(database_url, views_sql_file):
+    engine = create_engine(database_url)
+
+    with open(views_sql_file, 'r') as file:
+        views_sql = file.read()
+
+    statements = [
+        stmt.strip()
+        for stmt in views_sql.split(";")
+        if stmt.strip()
+    ]
+
+    with engine.begin() as connection:
+        for stmt in statements:
+            connection.execute(text(stmt))
+
+#executing the pipeline by calling the main function. 
+ 
 def main():
     file_path = 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv'
     data = extract_data(file_path)
     transformed_data = transform_data(data)
     load_data(transformed_data, "postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", "traffic_accidents_final")
+    create_views("postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\sql\\views\\views.sql')
 
 # Execute the pipeline by calling the main function, if name is main, which ensures that the pipeline runs only when this script is executed directly and not when imported as a module in another script.  
 if __name__ == "__main__":
     main()
 print('successful run')
 
-# Generate a unique run ID based on current timestamp for reproducibility and tracking
-# takes the date and time now 
+# Generate a unique run ID based on current timestamp for reproducibility and tracking and takes the date and time now 
 run_id = datetime.now().strftime("%Y%m%d%H%M%S")
-
 # save the cleaned dataset for version control and auditability 
 cleaned_data = transform_data(data)
 cleaned_data.to_csv(f'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\versions\\cleaned_traffic_accidents_{run_id}.csv', index=False)
@@ -219,6 +279,6 @@ cleaned_data.to_csv(f'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdPro
 
 print(f'Run ID: {run_id}')
 print(f'Rows: {len(cleaned_data)}')
-#road = data['prim_contributory_cause'].value_counts()
-#print(road)
-#print(transform_data(extract_data('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv')).info())
+
+
+

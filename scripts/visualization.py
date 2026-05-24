@@ -20,11 +20,9 @@ def visualization_monthly_trend():
         fig, ax = plt.subplots(figsize=(12, 6))
         ax.plot(monthly_trend['month_name'], monthly_trend['total_accidents'], marker='o', linestyle='-', color='b', zorder=3)
         ax.grid(True, which='major', linestyle='--', linewidth=0.6)
-        ax.set(xlabel='Month', ylabel='Total Accidents', title='Monthly Trend of Traffic Accidents')
+        ax.set(xlabel='Month', ylabel='Total Accidents', title='Monthly Trend of Traffic Accidents (2013-2025)')
         plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\monthly_trend.png', dpi=300, bbox_inches='tight')
     
-#visualization_monthly_trend()
-
     
 #creating visualization for vw_seasonal_trend
 def visualization_seasonal_trend():
@@ -39,8 +37,6 @@ def visualization_seasonal_trend():
         ax.set(xlabel='Season', ylabel='Total Accidents', title='Seasonal Trend of Traffic Accidents')
         plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\seasonal_trend.png', dpi=300, bbox_inches='tight')
 
-#visualization_seasonal_trend()
-
 #creating visualization for vw_cause_severity_analysis
 def visualization_cause_severity():
     query = 'SELECT * FROM vw_cause_severity_analysis;'
@@ -48,15 +44,13 @@ def visualization_cause_severity():
     with plt.style.context('ggplot'):
         #going to use horizontal bar plot using 
         fig, ax = plt.subplots()
-        ax.barh(cause_severity['cause_category'], cause_severity['avg_severity_score'], zorder=3, color='indigo')
+        ax.barh(cause_severity['cause_category'], cause_severity['average_severity_score'], zorder=3, color='indigo')
         ax.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
         ax.set_xticklabels(['0.0 \n Minor', '0.2 \n Low', '0.4 \n Moderate', '0.6 \n High', '0.8 \n Severe', '1.0 \n Fatal'])
         ax.set(ylabel='Cause Category', title='Accident Impact and Frequency by cause category')
         ax.set_xlabel('Average Severity Score', labelpad=15)
         plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\cause_severity.png', dpi=300, bbox_inches='tight')
 
-#visualization_cause_severity()
- 
 def visualization_total_injury_by_day():
     query = 'SELECT * FROM vw_total_injury_by_day;'
     total_injury_by_day = pd.read_sql(query, engine)
@@ -68,9 +62,9 @@ def visualization_total_injury_by_day():
     .reset_index()
     .fillna(0))
     fig, ax = plt.subplots()
-    ax.bar(total_injury_by_day['time_of_day'], total_injury_by_day['accident_with_injuries'], zorder=3 , color='deepskyblue')
+    ax.bar(total_injury_by_day['time_of_day'], total_injury_by_day['total_accidents_with_injuries'], zorder=3 , color='deepskyblue')
     ax2=ax.twinx()
-    ax2.plot(total_injury_by_day['time_of_day'], total_injury_by_day['severity_score_average'], marker='o', linestyle='-', color='red', zorder=2)
+    ax2.plot(total_injury_by_day['time_of_day'], total_injury_by_day['average_severity_score'], marker='o', linestyle='-', color='red', zorder=2)
     ax2.set_ylabel('Average Severity Score', color='red', labelpad=15)
     ax.set_xticklabels(['Morning\n6AM-12PM', 'Afternoon\n12PM-6PM', 'Evening\n6PM-12AM', 'Unknown\n12AM-12AM'])
     ax.set_ylabel('Total Accidents with Injuries', color='deepskyblue', labelpad=15)
@@ -95,7 +89,7 @@ def visualization_damage_level_distribution():
         fig, ax = plt.subplots()
         ax.bar(damage_level_distribution['damage_level'], damage_level_distribution['total_accidents'], zorder=3, color ='green')
         ax2=ax.twinx()
-        ax2.plot(damage_level_distribution['damage_level'], damage_level_distribution['avg_severity_score'], marker='o', linestyle='-', color='red', zorder=4)
+        ax2.plot(damage_level_distribution['damage_level'], damage_level_distribution['average_severity_score'], marker='o', linestyle='-', color='red', zorder=4)
         ax.set_xticks(range(len(damage_level_distribution['damage_level'])))
         ax.set_xticklabels(['Low \n (UNDER $500)', 'Medium \n ($500 - $1,500)', 'High \n (OVER $1,500)'])
         ax.set_title('Distribution of Accidents by Damage Level')
@@ -107,17 +101,14 @@ def visualization_damage_level_distribution():
         ax2.patch.set_alpha(0)
         plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\damage_level_distribution.png', dpi=300, bbox_inches='tight')
 
-#visualization_damage_level_distribution()
-
-
-
+#this should be stacked bar plot
 def visualization_multi_single_unit():
     with plt.style.context('ggplot'):
         query = 'SELECT * FROM vw_multi_single_unit_comparison;'
         multi_single_unit = pd.read_sql(query, engine)
-        labels = multi_single_unit['multi_unit_flag'].replace({True: 'Multi-Unit', False: 'Single-Unit'})
+        labels = multi_single_unit['multi_unit'].replace({True: 'Multi-Unit', False: 'Single-Unit'})
         total_accidents = multi_single_unit['total_accidents']
-        injuries = multi_single_unit['injuries_total']
+        injuries = multi_single_unit['total_accident_with_injuries']
         x = range(len(labels))
         width = 0.35
         fig, ax = plt.subplots(figsize=(8,5))
@@ -147,7 +138,11 @@ def visualization_multi_single_unit():
         ax.grid(True, linestyle='--', alpha=0.4)
         plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\multi_single_unit_comparison.png', dpi=300, bbox_inches='tight')
         
-
+visualization_monthly_trend()
+visualization_seasonal_trend()
+visualization_cause_severity()
+visualization_total_injury_by_day()
+visualization_damage_level_distribution()
 visualization_multi_single_unit()
 print('successful call')
 
