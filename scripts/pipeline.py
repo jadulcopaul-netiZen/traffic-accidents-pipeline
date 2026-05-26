@@ -12,8 +12,17 @@ data=pd.read_csv('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject
 
 #Extraction
 def extract_data(file_path):
-    data = pd.read_csv(file_path)
-    return data
+    #adding try and except block to handle any potential errors that may occur during the extraction process, which will help in debugging and ensuring the robustness of the pipeline.
+    try:
+        data = pd.read_csv(file_path)
+        print('File read successfully')
+        return data
+    except FileNotFoundError:
+        print("File not found")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 #Transformation
 def transform_data(data):
@@ -36,7 +45,8 @@ def transform_data(data):
         'crash_month'
     ]
     cleaned_data[list_to_int] = cleaned_data[list_to_int].fillna(0).astype(int)
-    
+    #dropping most_severe_injury, not needed and redundant
+    cleaned_data = cleaned_data.drop(columns=['most_severe_injury'])
 
     #***** Feature Engineering section ******
     
@@ -186,99 +196,110 @@ def transform_data(data):
 
     return cleaned_data
 
-#Loading data
+#Loading data with add try except
 def load_data(data, database_url, table_name):
-    engine = create_engine(database_url)
+    try:
+        engine = create_engine(database_url)
+        #truncating the table before loading new data for idempotency of this project.
+        with engine.begin() as connection:
+            connection.execute(text(f'TRUNCATE TABLE public.{table_name};'))
+        dtype={
+            'crash_date' : Date,
 
-    #truncating the table before loading new data for idempotency of this project.
-    with engine.begin() as connection:
-        connection.execute(text(f'TRUNCATE TABLE public.{table_name};'))
-    dtype={
-        'crash_date' : Date,
+            'traffic_control_device' : String(100) ,
+            'weather_condition' : String(255) ,
+            'lighting_condition' : String(255) ,
+            'first_crash_type' : String(255) ,
+            'trafficway_type' : String(255) ,
+            'alignment' : String(100) ,
+            'roadway_surface_cond' : String(255) ,
+            'road_defect' : String(255) ,
+            'crash_type' : String(255) ,
+            'intersection_related_i' : String(255) ,
+            'damage' : String(255) ,
+            'prim_contributory_cause' : String(255) ,
+            'day_type' : String(10) ,
+            'time_of_day' : String(20) ,
+            'season' : String(10) ,
+            'month_name' : String(20) ,
+            'damage_level' : String(20) ,
+            'cause_category' : String(20) ,
+            'run_id' : String(100) ,
 
-        'traffic_control_device' : String(100) ,
-        'weather_condition' : String(255) ,
-        'lighting_condition' : String(255) ,
-        'first_crash_type' : String(255) ,
-        'trafficway_type' : String(255) ,
-        'alignment' : String(100) ,
-        'roadway_surface_cond' : String(255) ,
-        'road_defect' : String(255) ,
-        'crash_type' : String(255) ,
-        'intersection_related_i' : String(255) ,
-        'damage' : String(255) ,
-        'prim_contributory_cause' : String(255) ,
-        'day_type' : String(10) ,
-        'time_of_day' : String(20) ,
-        'season' : String(10) ,
-        'month_name' : String(20) ,
-        'damage_level' : String(20) ,
-        'cause_category' : String(20) ,
+            'num_units' : Integer,
+            'injuries_total' : Integer,
+            'injuries_fatal' : Integer,
+            'injuries_incapacitating' : Integer,
+            'injuries_non_incapacitating' : Integer,
+            'injuries_reported_not_evident' : Integer,
+            'injuries_no_indication' : Integer,
+            'crash_hour' : Integer,
+            'crash_day_of_week' : Integer,
+            'crash_month' : Integer,
+            'severity_score' : Integer,
 
-        'num_units' : Integer,
-        'injuries_total' : Integer,
-        'injuries_fatal' : Integer,
-        'injuries_incapacitating' : Integer,
-        'injuries_non_incapacitating' : Integer,
-        'injuries_reported_not_evident' : Integer,
-        'injuries_no_indication' : Integer,
-        'crash_hour' : Integer,
-        'crash_day_of_week' : Integer,
-        'crash_month' : Integer,
-        'severity_score' : Integer,
-
-        'is_severe' : Boolean,
-        'multi_unit' : Boolean,
-        'is_driver_related' : Boolean,
-        'is_road_related' : Boolean,
-        'is_environment_related' : Boolean,
-        'is_unknown_cause' : Boolean,
-        'is_other_cause' : Boolean
-    }
-    data.to_sql('traffic_accidents_final', engine, if_exists='append', dtype=dtype, index=False)
+            'is_severe' : Boolean,
+            'multi_unit' : Boolean,
+            'is_driver_related' : Boolean,
+            'is_road_related' : Boolean,
+            'is_environment_related' : Boolean,
+            'is_unknown_cause' : Boolean,
+            'is_other_cause' : Boolean
+        }
+        data.to_sql('traffic_accidents_final', engine, if_exists='append', dtype=dtype, index=False)
+        print('Data loaded successfully')
+    except Exception as e:
+        print(f"An error occurred while loading data: {e}")
 
 #after ETL, i'll call the views.sql file to create the views for analysis and visualization, to make the views available in the database.
 
 def create_views(database_url, views_sql_file):
-    engine = create_engine(database_url)
+    try: 
+        engine = create_engine(database_url)
+        # with ensures that the file is properly closed after reading, to ensure resource handling practice and file leaks are prevented, which is a good practice in file handling.
+        with open(views_sql_file, 'r') as file:
+            views_sql = file.read()
 
-    with open(views_sql_file, 'r') as file:
-        views_sql = file.read()
+        statements = [
+            stmt.strip()
+            for stmt in views_sql.split(";")
+            if stmt.strip()
+        ]
 
-    statements = [
-        stmt.strip()
-        for stmt in views_sql.split(";")
-        if stmt.strip()
-    ]
-
-    with engine.begin() as connection:
-        for stmt in statements:
-            connection.execute(text(stmt))
+        with engine.begin() as connection:
+            for stmt in statements:
+                connection.execute(text(stmt))
+        print('Views created successfully')
+    except Exception as e:
+        print(f"An error occurred while creating views: {e}")
 
 #executing the pipeline by calling the main function. 
  
 def main():
     file_path = 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv'
+
     data = extract_data(file_path)
     transformed_data = transform_data(data)
+    # save the cleaned dataset for version control and auditability 
+    run_id = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    transformed_data['run_id'] = run_id
     load_data(transformed_data, "postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", "traffic_accidents_final")
     create_views("postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\sql\\views\\views.sql')
+        
+    transformed_data.to_csv(f'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\versions\\cleaned_traffic_accidents_{run_id}.csv', index=False)
+    # Log basic execution metadata for auditability
+
+    print(f'Run ID: {run_id}')
 
 # Execute the pipeline by calling the main function, if name is main, which ensures that the pipeline runs only when this script is executed directly and not when imported as a module in another script.  
 if __name__ == "__main__":
     main()
 print('successful run')
 
-# Generate a unique run ID based on current timestamp for reproducibility and tracking and takes the date and time now 
-run_id = datetime.now().strftime("%Y%m%d%H%M%S")
-# save the cleaned dataset for version control and auditability 
-cleaned_data = transform_data(data)
-cleaned_data.to_csv(f'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\versions\\cleaned_traffic_accidents_{run_id}.csv', index=False)
 
-# Log basic execution metadata for auditability
 
-print(f'Run ID: {run_id}')
-print(f'Rows: {len(cleaned_data)}')
+
 
 
 
