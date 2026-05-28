@@ -53,10 +53,15 @@ count(*) as total_accidents
 FROM traffic_accidents_final
 GROUP BY damage_level;
 
-Create or replace view vw_multi_single_unit_comparison as
+DROP VIEW IF EXISTS public.vw_multi_single_unit_comparison;
 
-select count(*) as total_accidents, 
-count(injuries_total) as total_accident_with_injuries,
-multi_unit
+CREATE VIEW public.vw_multi_single_unit_comparison AS
+SELECT 
+    multi_unit, 
+    COUNT(*) AS total_accidents,
+    SUM(CASE 
+            WHEN injuries_total > 0 THEN 1 
+            ELSE 0 
+        END) AS total_accident_with_injuries
 FROM traffic_accidents_final
 GROUP BY multi_unit;

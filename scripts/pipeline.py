@@ -2,6 +2,8 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import text
 from datetime import datetime
+#importing the visualization.py functions to create the chart after the pipeline is executed. 
+from visualization import visualization_monthly_trend, visualization_seasonal_trend, visualization_cause_severity, visualization_total_injury_by_day, visualization_damage_level_distribution, visualization_multi_single_unit 
 #to map the datatypes of my database schema to the datatypes of my cleaned dataset, which will ensure that the data is loaded correctly into the database and that the integrity of the data is maintained.
 from sqlalchemy.types import Integer, Boolean, String, Date, DateTime
 
@@ -29,10 +31,9 @@ def transform_data(data):
     #Conversions of date and datatypes of injuries and, day, month, and hour of injuries
     #adding cleaned_data to avoid modifying the original data, just practicing data integrity 
     cleaned_data = data.copy()
-    cleaned_data['crash_date'] = pd.to_datetime(
-    cleaned_data['crash_date'],
-    errors='coerce'
-    )
+    #normalizing the crash_date column by stripping any leading or trailing whitespace and converting it to datetime format, which will ensure that the date is in a consistent format for analysis and visualization.
+    cleaned_data['crash_date'] = cleaned_data['crash_date'].astype(str).str.strip()
+    cleaned_data['crash_date'] = pd.to_datetime(cleaned_data['crash_date'], errors='coerce')
     list_to_int = [
         'injuries_total',
         'injuries_fatal',
@@ -200,7 +201,7 @@ def transform_data(data):
 def load_data(data, database_url, table_name):
     try:
         engine = create_engine(database_url)
-        #truncating the table before loading new data for idempotency of this project.
+        #truncating the table before loading new data for idempotency of this project, making sure that the table is cleared before loading new data.
         with engine.begin() as connection:
             connection.execute(text(f'TRUNCATE TABLE public.{table_name};'))
         dtype={
@@ -289,6 +290,13 @@ def main():
         
     transformed_data.to_csv(f'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\versions\\cleaned_traffic_accidents_{run_id}.csv', index=False)
     # Log basic execution metadata for auditability
+
+    visualization_cause_severity()
+    visualization_damage_level_distribution()
+    visualization_multi_single_unit()
+    visualization_monthly_trend()
+    visualization_seasonal_trend()
+    visualization_total_injury_by_day()
 
     print(f'Run ID: {run_id}')
 
