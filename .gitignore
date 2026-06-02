@@ -1,0 +1,19 @@
+#python
+__pycache__/
+*.pyc
+
+#virtual environment
+.env
+
+#data outputs
+data/versions/
+data/archive.zip
+
+#visualization outputs
+scripts/views_py/*.png
+
+# Logs (debug/runtime files, not needed for production or sharing)
+*.log
+
+# OS system files (macOS metadata, not relevant to project)
+.DS_Store

@@ -2,13 +2,17 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import text
 from datetime import datetime
-#importing the visualization.py functions to create the chart after the pipeline is executed. 
-from visualization import visualization_monthly_trend, visualization_seasonal_trend, visualization_cause_severity, visualization_total_injury_by_day, visualization_damage_level_distribution, visualization_multi_single_unit 
 #to map the datatypes of my database schema to the datatypes of my cleaned dataset, which will ensure that the data is loaded correctly into the database and that the integrity of the data is maintained.
 from sqlalchemy.types import Integer, Boolean, String, Date, DateTime
+from visualization import visualization_monthly_trend, visualization_seasonal_trend, visualization_cause_severity, visualization_total_injury_by_day, visualization_damage_level_distribution, visualization_multi_single_unit 
+from dotenv import load_dotenv
+import os 
 
-#setting the data variable to read the csv file and print the head, info and columns of the data
-data=pd.read_csv('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv')
+load_dotenv()
+
+# Loading data from CSV file, using the file path from env variable.
+file_path = os.getenv('DB_DATA_PATH')
+data=pd.read_csv(file_path)
 
 # Creating pipeline
 
@@ -277,18 +281,28 @@ def create_views(database_url, views_sql_file):
 #executing the pipeline by calling the main function. 
  
 def main():
-    file_path = 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\archive\\traffic_accidents.csv'
+    db_host = os.getenv('DB_HOST')
+    db_port = os.getenv('DB_PORT')
+    db_name = os.getenv('DB_NAME')
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    db_data_path = os.getenv('DB_DATA_PATH')
+    db_views_path = os.getenv('VIEWS_PATH')
+    db_transformed_data_path = os.getenv('TRANSFORMED_DATA_PATH')
+    
+    file_path = os.getenv('DB_DATA_PATH')
 
     data = extract_data(file_path)
     transformed_data = transform_data(data)
     # save the cleaned dataset for version control and auditability 
     run_id = datetime.now().strftime("%Y%m%d%H%M%S")
 
+    
     transformed_data['run_id'] = run_id
-    load_data(transformed_data, "postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", "traffic_accidents_final")
-    create_views("postgresql://postgres:!Langlang55!@localhost:5432/traffics_db", 'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\sql\\views\\views.sql')
+    load_data(transformed_data, f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}", "traffic_accidents_final")
+    create_views(f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}", db_views_path)
         
-    transformed_data.to_csv(f'C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\Data\\versions\\cleaned_traffic_accidents_{run_id}.csv', index=False)
+    transformed_data.to_csv(f'{db_transformed_data_path}\\cleaned_traffic_accidents_{run_id}.csv', index=False)
     # Log basic execution metadata for auditability
 
     visualization_cause_severity()

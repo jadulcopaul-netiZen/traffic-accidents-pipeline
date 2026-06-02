@@ -3,9 +3,18 @@
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine
 import pandas as pd
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
+DB_HOST=os.getenv('DB_HOST')
+DB_PORT=os.getenv('DB_PORT')
+DB_NAME=os.getenv('DB_NAME')
+DB_USER=os.getenv('DB_USER')
+DB_PASSWORD=os.getenv('DB_PASSWORD')
+VISUALS_PATH=os.getenv('VISUALS_PATH')
 #creating database connection
-engine = create_engine('postgresql://postgres:!Langlang55!@localhost:5432/traffics_db')
+engine = create_engine(f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}')
 
 
 #creating visualization for vw_monthly_trend
@@ -21,9 +30,10 @@ def visualization_monthly_trend():
         ax.plot(monthly_trend['month_name'], monthly_trend['total_accidents'], marker='o', linestyle='-', color='b', zorder=3)
         ax.grid(True, which='major', linestyle='--', linewidth=0.6)
         ax.set(xlabel='Month', ylabel='Total Accidents', title='Monthly Trend of Traffic Accidents (2013-2025)')
-        plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\monthly_trend.png', dpi=300, bbox_inches='tight')
-    
-    
+        print(f'Saving monthly_trend.png - rows returned: {len(monthly_trend)}')
+        plt.savefig(os.path.join(VISUALS_PATH, 'monthly_trend.png'), dpi=300, bbox_inches='tight')
+
+
 #creating visualization for vw_seasonal_trend
 def visualization_seasonal_trend():
     query = 'SELECT * FROM vw_seasonal_trend;'
@@ -35,7 +45,8 @@ def visualization_seasonal_trend():
         ax.set_xticks(range(len(seasonal_trend['season'])))
         ax.set_xticklabels(['Spring\nMar-May', 'Summer\nJun-Aug', 'Fall\nSep-Nov', 'Winter\nDec-Feb'])
         ax.set(xlabel='Season', ylabel='Total Accidents', title='Seasonal Trend of Traffic Accidents')
-        plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\seasonal_trend.png', dpi=300, bbox_inches='tight')
+        print(f'Saving seasonal_trend.png - rows returned: {len(seasonal_trend)}')
+        plt.savefig(os.path.join(VISUALS_PATH, 'seasonal_trend.png'), dpi=300, bbox_inches='tight')
 
 #creating visualization for vw_cause_severity_analysis
 def visualization_cause_severity():
@@ -49,7 +60,8 @@ def visualization_cause_severity():
         ax.set_xticklabels(['0.0 \n Minor', '0.2 \n Low', '0.4 \n Moderate', '0.6 \n High', '0.8 \n Severe', '1.0 \n Fatal'])
         ax.set(ylabel='Cause Category', title='Accident Impact and Frequency by cause category')
         ax.set_xlabel('Average Severity Score', labelpad=15)
-        plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\cause_severity.png', dpi=300, bbox_inches='tight')
+        print(f'Saving cause_severity.png - rows returned: {len(cause_severity)}')
+        plt.savefig(os.path.join(VISUALS_PATH, 'cause_severity.png'), dpi=300, bbox_inches='tight')
 
 def visualization_total_injury_by_day():
     query = 'SELECT * FROM vw_total_injury_by_day;'
@@ -71,7 +83,8 @@ def visualization_total_injury_by_day():
     ax.set_ylabel('Total Accidents with Injuries', color='deepskyblue', labelpad=15)
     ax.set(xlabel = 'Time of Day', title='Total Accidents with Injuries and Average Severity Score by Time of Day')
     ax.grid(True, which='major', linestyle='--', linewidth=0.6)
-    plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\total_injury_by_day.png', dpi=300, bbox_inches='tight')
+    print(f'Saving total_injury_by_day.png - rows returned: {len(total_injury_by_day)}')
+    plt.savefig(os.path.join(VISUALS_PATH, 'total_injury_by_day.png'), dpi=300, bbox_inches='tight')
 
 
 #creating visualization for damage_level_distribution
@@ -100,7 +113,8 @@ def visualization_damage_level_distribution():
         ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.3)
         ax.set_axisbelow(True)
         ax2.patch.set_alpha(0)
-        plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\damage_level_distribution.png', dpi=300, bbox_inches='tight')
+        print(f'Saving damage_level_distribution.png - rows returned: {len(damage_level_distribution)}')
+        plt.savefig(os.path.join(VISUALS_PATH, 'damage_level_distribution.png'), dpi=300, bbox_inches='tight')
 
 #this should be stacked bar plot
 def visualization_multi_single_unit():
@@ -137,13 +151,7 @@ def visualization_multi_single_unit():
         ax.legend()
         ax.set_axisbelow(True)
         ax.grid(True, linestyle='--', alpha=0.4)
-        plt.savefig('C:\\Users\\DELL\\Desktop\\Luap\\Data Engineering\\ThirdProject\\scripts\\views_py\\multi_single_unit_comparison.png', dpi=300, bbox_inches='tight')
+        print(f'Saving multi_single_unit_comparison.png - rows returned: {len(multi_single_unit)}')
+        plt.savefig(os.path.join(VISUALS_PATH, 'multi_single_unit_comparison.png'), dpi=300, bbox_inches='tight')
         
-visualization_monthly_trend()
-visualization_seasonal_trend()
-visualization_cause_severity()
-visualization_total_injury_by_day()
-visualization_damage_level_distribution()
-visualization_multi_single_unit()
-print('successful call')
 
