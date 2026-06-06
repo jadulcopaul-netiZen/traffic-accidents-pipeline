@@ -5,8 +5,11 @@ __pycache__/
 #virtual environment
 .env
 
+#raw dataset
+data/archive/traffic_accidents.csv
+
 #data outputs
-data/versions/
+data/versions/*.csv
 data/archive.zip
 
 #visualization outputs

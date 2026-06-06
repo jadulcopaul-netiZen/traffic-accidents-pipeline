@@ -22,15 +22,11 @@ END;
 
 Create or replace view vw_seasonal_trend as
 
-select season, count(*) as total_accidents
+SELECT 
+    season,
+    COUNT(*) AS total_accidents
 FROM traffic_accidents_final
-GROUP BY season
-ORDER BY CASE season
-    WHEN 'Winter' THEN 1
-    WHEN 'Spring' THEN 2
-    WHEN 'Summer' THEN 3
-    WHEN 'Fall' THEN 4
-END;
+GROUP BY season;
 
 Create or replace view vw_cause_severity_analysis as
 

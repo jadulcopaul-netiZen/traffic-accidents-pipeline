@@ -33,19 +33,36 @@ def visualization_monthly_trend():
         print(f'Saving monthly_trend.png - rows returned: {len(monthly_trend)}')
         plt.savefig(os.path.join(VISUALS_PATH, 'monthly_trend.png'), dpi=300, bbox_inches='tight')
 
-
 #creating visualization for vw_seasonal_trend
 def visualization_seasonal_trend():
     query = 'SELECT * FROM vw_seasonal_trend;'
     seasonal_trend = pd.read_sql(query, engine)
+    # enforce correct logical order
+    order = ['Spring', 'Summer', 'Fall', 'Winter']
+    seasonal_trend = (
+        seasonal_trend
+        .set_index('season')
+        .reindex(order)
+        .reset_index()
+        .fillna(0)
+    )
     with plt.style.context('ggplot'):
         fig, ax = plt.subplots()
-        season_colors = {'Spring': 'green', 'Summer': 'yellow', 'Fall': 'orange', 'Winter': 'blue'}
-        ax.bar(seasonal_trend['season'], seasonal_trend['total_accidents'], zorder=3, color=[season_colors[season] for season in seasonal_trend['season']])
-        ax.set_xticks(range(len(seasonal_trend['season'])))
-        ax.set_xticklabels(['Spring\nMar-May', 'Summer\nJun-Aug', 'Fall\nSep-Nov', 'Winter\nDec-Feb'])
-        ax.set(xlabel='Season', ylabel='Total Accidents', title='Seasonal Trend of Traffic Accidents')
-        print(f'Saving seasonal_trend.png - rows returned: {len(seasonal_trend)}')
+        season_colors = {
+            'Spring': 'blue',
+            'Summer': 'green',
+            'Fall': 'yellow',
+            'Winter': 'orange'
+        }
+        ax.bar(
+            seasonal_trend['season'],
+            seasonal_trend['total_accidents'],
+            zorder=3,
+            color=[season_colors[s] for s in seasonal_trend['season']]
+        )
+        ax.set(xlabel='Season',
+               ylabel='Total Accidents',
+               title='Seasonal Trend of Traffic Accidents')
         plt.savefig(os.path.join(VISUALS_PATH, 'seasonal_trend.png'), dpi=300, bbox_inches='tight')
 
 #creating visualization for vw_cause_severity_analysis
