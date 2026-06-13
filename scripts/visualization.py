@@ -22,8 +22,6 @@ def visualization_monthly_trend():
     #creating query to fetch data from PSQL database, calling engine to execute the query and fetch the data, and storing the result in a pandas dataframe
     query = 'SELECT * FROM vw_monthly_trend;'
     monthly_trend = pd.read_sql(query, engine)
-    #printing monthly_trend to confirm 
-    #print(monthly_trend.head())
     #using temporary style context to create a line plot to visualize the monthly trend of traffic accidents where X-axis is the month while y-axis is the total number of accidents. Adding gridlines for better readability and setting labels and title for the plot.
     with plt.style.context('ggplot'):
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -64,7 +62,8 @@ def visualization_seasonal_trend():
                ylabel='Total Accidents',
                title='Seasonal Trend of Traffic Accidents')
         plt.savefig(os.path.join(VISUALS_PATH, 'seasonal_trend.png'), dpi=300, bbox_inches='tight')
-
+        print(f'Saving seasonal_trend.png - rows returned: {len(seasonal_trend)}')
+        
 #creating visualization for vw_cause_severity_analysis
 def visualization_cause_severity():
     query = 'SELECT * FROM vw_cause_severity_analysis;'

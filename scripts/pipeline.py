@@ -155,6 +155,7 @@ def transform_data(data):
     cleaned_data['is_unknown_cause'] = cleaned_data['cause_category'] == 'UNKNOWN'
     cleaned_data['is_other_cause'] = cleaned_data['cause_category'] == 'OTHER'
 
+    # Exploratory aggregations retained for future analytical development. Currently not used by downstream ETL processes, SQL views, or visualizations.
     # Highest cause of injury based on severity and total injuries
     highest_injury_cause = (
         cleaned_data.groupby("cause_category")
@@ -205,7 +206,7 @@ def transform_data(data):
 def load_data(data, database_url, table_name):
     try:
         engine = create_engine(database_url)
-        #truncating the table before loading new data for idempotency of this project, making sure that the table is cleared before loading new data.
+        # Truncate the target table before loading data to maintain idempotent pipeline runs. This prevents duplicate records when the pipeline is executed multiple times.
         with engine.begin() as connection:
             connection.execute(text(f'TRUNCATE TABLE public.{table_name};'))
         dtype={
