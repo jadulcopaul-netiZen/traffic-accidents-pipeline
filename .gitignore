@@ -6,17 +6,11 @@ __pycache__/
 .env
 
 #raw dataset
-data/archive/traffic_accidents.csv
+Data/archive/traffic_accidents.csv
 
 #data outputs
-data/versions/*.csv
-data/archive.zip
+Data/versions/*.csv
+Data/archive.zip
 
 #visualization outputs
 scripts/views_py/*.png
-
-# Logs (debug/runtime files, not needed for production or sharing)
-*.log
-
-# OS system files (macOS metadata, not relevant to project)
-.DS_Store

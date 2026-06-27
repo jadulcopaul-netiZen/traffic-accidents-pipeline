@@ -205,7 +205,8 @@ It provides business-ready dashboards for exploring accident trends, severity me
 ```
 traffic-accident-pipeline/
 │
-├── .env
+├── .env (ignored)
+├── .env.example
 ├── .gitignore
 ├── README.md
 ├── requirements.txt
@@ -252,19 +253,30 @@ bash
 pip install -r requirements.txt
 ```
 #### Step 4: Configure Environment Variables
-```
-Create a .env file in the root directory:
 
-DB_HOST=your_host
+Copy the provided `.env.example` file and rename it to `.env`.
+
+Example:
+
+```bash
+cp .env.example .env
+```
+
+On Windows, simply duplicate `.env.example` and rename the copy to `.env`.
+
+Then update the database credentials in `.env` to match your local PostgreSQL configuration.
+
+```env
+DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=your_database
 DB_USER=your_username
 DB_PASSWORD=your_password
 
-DB_DATA_PATH=path/to/traffic_accidents.csv
-VIEWS_PATH=path/to/sql/views/views.sql
-TRANSFORMED_DATA_PATH=path/to/save/cleaned_data
-VISUALS_PATH=path/to/save/visuals
+DB_DATA_PATH=Data/archive/traffic_accidents.csv
+TRANSFORMED_DATA_PATH=Data/versions
+VIEWS_PATH=sql/views/views.sql
+VISUALS_PATH=scripts/views_py
 ```
 #### Step 5: Download Dataset
 
@@ -277,6 +289,9 @@ Place it in:
 Data/archive/traffic_accidents.csv
 
 #### Step 6: Run the ETL Pipeline
+
+Ensure your terminal is opened at the project root (`traffic-accident-pipeline`) before running the pipeline.
+
 ```
 bash
 python scripts/pipeline.py
