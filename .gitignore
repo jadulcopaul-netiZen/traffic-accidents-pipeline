@@ -14,3 +14,4 @@ Data/archive.zip
 
 #visualization outputs
 scripts/views_py/*.png
+!scripts/views_py/.gitkeep
